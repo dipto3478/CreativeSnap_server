@@ -47,6 +47,7 @@ async function run() {
 
     const usersCollection = client.db("CreativeSnap").collection("users");
     const classesCollection = client.db("CreativeSnap").collection("classes");
+    const cardsCollection = client.db("CreativeSnap").collection("cards");
 
     // jwt sign validation
     app.post("/jwt", (req, res) => {
@@ -134,6 +135,21 @@ async function run() {
     });
     app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
+
+    // cards api collection
+
+    app.post("/cards", async (req, res) => {
+      const body = req.body;
+      const result = await cardsCollection.insertOne(body);
+      res.send(result);
+    });
+
+    app.get("/cards/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { user_email: email };
+      const result = await cardsCollection.find(query).toArray();
       res.send(result);
     });
 
