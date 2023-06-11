@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
+const stripe = require("stripe")(process.env.PAYMENT_KEY);
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
@@ -48,6 +49,7 @@ async function run() {
     const usersCollection = client.db("CreativeSnap").collection("users");
     const classesCollection = client.db("CreativeSnap").collection("classes");
     const cardsCollection = client.db("CreativeSnap").collection("cards");
+    const paymentsCollection = client.db("CreativeSnap").collection("payments");
 
     // jwt sign validation
     app.post("/jwt", (req, res) => {
@@ -82,7 +84,7 @@ async function run() {
       const result = await usersCollection.findOne(query);
       res.send(result);
     });
-    app.get("/instructors", async (req, res) => {
+    app.get("/instructors", verifyJWT, async (req, res) => {
       const filter = { role: "instructor" }; // Update the role value to "instructor"
 
       try {
@@ -146,11 +148,61 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/cards/:email", async (req, res) => {
+    app.get("/cards/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { user_email: email };
       const result = await cardsCollection.find(query).toArray();
       res.send(result);
+    });
+
+    app.delete("/cards/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cardsCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.get("/cards/single/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cardsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // create payment intent
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseFloat(price) * 100;
+
+      if (isNaN(amount)) {
+        res.status(400).send({ error: "Invalid price value" });
+        return;
+      }
+
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amount,
+          currency: "usd",
+          payment_method_types: ["card"],
+        });
+
+        res.send({
+          clientSecret: paymentIntent.client_secret,
+        });
+      } catch (error) {
+        res.status(500).send({ error: "Payment Intent creation failed" });
+      }
+    });
+
+    // payment api collection
+
+    app.post("/payment", async (req, res) => {
+      const body = req.body;
+      const result = await paymentsCollection.insertOne(body);
+      const query = { _id: new ObjectId(body.itemId) };
+      const deleted = await cardsCollection.deleteOne(query);
+      res.send({ result, deleted });
     });
 
     // Send a ping to confirm a successful connection
