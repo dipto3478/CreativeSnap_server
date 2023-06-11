@@ -84,7 +84,7 @@ async function run() {
       const result = await usersCollection.findOne(query);
       res.send(result);
     });
-    app.get("/instructors", verifyJWT, async (req, res) => {
+    app.get("/instructors", async (req, res) => {
       const filter = { role: "instructor" }; // Update the role value to "instructor"
 
       try {
@@ -202,7 +202,47 @@ async function run() {
       const result = await paymentsCollection.insertOne(body);
       const query = { _id: new ObjectId(body.itemId) };
       const deleted = await cardsCollection.deleteOne(query);
-      res.send({ result, deleted });
+      const instructor_email = body.instructor_email;
+      const filter = { email: instructor_email };
+      const options = { upsert: true };
+      let availableSeats = parseInt(body.Available_seats);
+
+      if (availableSeats <= 0) {
+        return res
+          .status(400)
+          .json({ error: "No available seats for this project." });
+      }
+
+      availableSeats--;
+
+      const updateDoc = {
+        $set: {
+          Available_seats: availableSeats,
+        },
+        $inc: { sell_count: 1 },
+      };
+
+      const classesUpdate = await classesCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+
+      const userUpdate = await usersCollection.updateOne(
+        filter,
+        { $inc: { sell_count: 1 } },
+        options
+      );
+
+      res.json({ result, deleted, classesUpdate, userUpdate });
+    });
+
+    app.get("/payment/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const sort = { date: -1 };
+      const result = await paymentsCollection.find(query).sort(sort).toArray();
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
