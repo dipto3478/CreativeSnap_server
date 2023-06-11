@@ -85,8 +85,7 @@ async function run() {
       res.send(result);
     });
     app.get("/instructors", async (req, res) => {
-      const filter = { role: "instructor" }; // Update the role value to "instructor"
-
+      const filter = { role: "instructor" };
       try {
         const result = await usersCollection.find(filter).toArray();
         res.send(result);
@@ -96,8 +95,20 @@ async function run() {
       }
     });
 
+    app.get("/instructors/popular", async (req, res) => {
+      const filter = { role: "instructor" };
+      const sort = { sell_count: -1 };
+      try {
+        const result = await usersCollection.find(filter).sort(sort).toArray();
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+      }
+    });
+
     // make admin
-    app.patch("/users/admin/:id", async (req, res) => {
+    app.patch("/users/admin/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -109,7 +120,7 @@ async function run() {
       res.send(result);
     });
     // make instructor
-    app.patch("/users/instructor/:id", async (req, res) => {
+    app.patch("/users/instructor/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -121,7 +132,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/users/:id", async (req, res) => {
+    app.delete("/users/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
@@ -130,7 +141,7 @@ async function run() {
 
     // classes api collection
 
-    app.post("/classes", async (req, res) => {
+    app.post("/classes", verifyJWT, async (req, res) => {
       const body = req.body;
       const result = await classesCollection.insertOne(body);
       res.send(result);
@@ -140,9 +151,15 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/classes/popular", async (req, res) => {
+      const sort = { sell_count: -1 };
+      const result = await classesCollection.find().sort(sort).toArray();
+      res.send(result);
+    });
+
     // cards api collection
 
-    app.post("/cards", async (req, res) => {
+    app.post("/cards", verifyJWT, async (req, res) => {
       const body = req.body;
       const result = await cardsCollection.insertOne(body);
       res.send(result);
@@ -155,14 +172,14 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/cards/:id", async (req, res) => {
+    app.delete("/cards/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await cardsCollection.deleteOne(query);
       res.send(result);
     });
 
-    app.get("/cards/single/:id", async (req, res) => {
+    app.get("/cards/single/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await cardsCollection.findOne(query);
@@ -197,7 +214,7 @@ async function run() {
 
     // payment api collection
 
-    app.post("/payment", async (req, res) => {
+    app.post("/payment", verifyJWT, async (req, res) => {
       const body = req.body;
       const result = await paymentsCollection.insertOne(body);
       const query = { _id: new ObjectId(body.itemId) };
@@ -237,7 +254,7 @@ async function run() {
       res.json({ result, deleted, classesUpdate, userUpdate });
     });
 
-    app.get("/payment/:email", async (req, res) => {
+    app.get("/payment/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const sort = { date: -1 };
