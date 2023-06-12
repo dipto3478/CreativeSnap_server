@@ -99,7 +99,11 @@ async function run() {
       const filter = { role: "instructor" };
       const sort = { sell_count: -1 };
       try {
-        const result = await usersCollection.find(filter).sort(sort).toArray();
+        const result = await usersCollection
+          .find(filter)
+          .limit(6)
+          .sort(sort)
+          .toArray();
         res.send(result);
       } catch (error) {
         console.error(error);
@@ -146,14 +150,73 @@ async function run() {
       const result = await classesCollection.insertOne(body);
       res.send(result);
     });
-    app.get("/classes", async (req, res) => {
+
+    app.get("/allclasses", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
+    app.get("/classes/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await classesCollection.find(query).toArray();
+      res.send(result);
+    });
 
-    app.get("/classes/popular", async (req, res) => {
+    app.delete("/classes/:id", verifyJWT, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await classesCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    app.get("/classes", async (req, res) => {
+      const filter = { status: "approved" };
+      const result = await classesCollection.find(filter).toArray();
+      res.send(result);
+    });
+
+    app.patch("/classes/approved/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await classesCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    app.patch("/classes/denied/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "denied",
+        },
+      };
+      const result = await classesCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+    app.patch("/classes/feedback/:id", async (req, res) => {
+      const id = req.params.id;
+      const { feedback } = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          feedback,
+        },
+      };
+      const result = await classesCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+    app.get("/popular/classes", async (req, res) => {
       const sort = { sell_count: -1 };
-      const result = await classesCollection.find().sort(sort).toArray();
+      const result = await classesCollection
+        .find()
+        .limit(6)
+        .sort(sort)
+        .toArray();
       res.send(result);
     });
 
