@@ -112,7 +112,7 @@ async function run() {
     });
 
     // make admin
-    app.patch("/users/admin/:id", verifyJWT, async (req, res) => {
+    app.patch("/users/admin/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -124,7 +124,7 @@ async function run() {
       res.send(result);
     });
     // make instructor
-    app.patch("/users/instructor/:id", verifyJWT, async (req, res) => {
+    app.patch("/users/instructor/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -136,7 +136,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/users/:id", verifyJWT, async (req, res) => {
+    app.delete("/users/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
@@ -151,7 +151,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/allclasses", async (req, res) => {
+    app.get("/allclasses", verifyJWT, async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
@@ -162,7 +162,7 @@ async function run() {
       res.send(result);
     });
 
-    app.delete("/classes/:id", verifyJWT, async (req, res) => {
+    app.delete("/classes/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await classesCollection.deleteOne(query);
@@ -175,7 +175,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/classes/approved/:id", verifyJWT, async (req, res) => {
+    app.patch("/classes/approved/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -187,7 +187,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/classes/denied/:id", verifyJWT, async (req, res) => {
+    app.patch("/classes/denied/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -199,7 +199,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/classes/feedback/:id", verifyJWT, async (req, res) => {
+    app.patch("/classes/feedback/:id", async (req, res) => {
       const id = req.params.id;
       const { feedback } = req.body;
       const query = { _id: new ObjectId(id) };
