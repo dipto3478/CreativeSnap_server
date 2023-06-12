@@ -175,12 +175,12 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/classes/approved/:id", async (req, res) => {
+    app.patch("/classes/denied/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          status: "approved",
+          status: "denied",
         },
       };
       const result = await classesCollection.updateOne(query, updateDoc);
