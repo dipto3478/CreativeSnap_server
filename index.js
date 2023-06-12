@@ -2,10 +2,10 @@ const express = require("express");
 const app = express();
 require("dotenv").config();
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const stripe = require("stripe")(process.env.PAYMENT_KEY);
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const jwt = require("jsonwebtoken");
 
 // middleware
 app.use(cors());
@@ -44,7 +44,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const usersCollection = client.db("CreativeSnap").collection("users");
     const classesCollection = client.db("CreativeSnap").collection("classes");
@@ -175,7 +175,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/classes/approved/:id", async (req, res) => {
+    app.patch("/classes/approved/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -187,7 +187,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/classes/denied/:id", async (req, res) => {
+    app.patch("/classes/denied/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updateDoc = {
@@ -199,7 +199,7 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/classes/feedback/:id", async (req, res) => {
+    app.patch("/classes/feedback/:id", verifyJWT, async (req, res) => {
       const id = req.params.id;
       const { feedback } = req.body;
       const query = { _id: new ObjectId(id) };
@@ -252,7 +252,7 @@ async function run() {
 
     // create payment intent
 
-    app.post("/create-payment-intent", async (req, res) => {
+    app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const { price } = req.body;
       const amount = parseFloat(price) * 100;
 
@@ -327,7 +327,7 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
